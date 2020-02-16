@@ -4,7 +4,8 @@ COPY ./startup.go /startup.go
 RUN cd / && go build startup.go
 
 from continuumio/miniconda3:4.7.12-alpine as py_build
-
+ARG  PY_VER
+ENV  PY_VER=$PY_VER
 # ENV PATH "/opt/conda/bin:/usr/local/bin:$PATH:/home/dja/.local/bin"
 
 # https://uoa-eresearch.github.io/eresearch-cookbook/recipe/2014/11/20/conda/
@@ -18,21 +19,21 @@ RUN export uid=3000 gid=3000 && \
     chown ${uid}:${gid} -R /home/dja && \
     chown ${uid}:${gid} -R /src && \
     chmod -R g+w /opt/conda
-# jupyter dependencies
-RUN \
-  apk --no-cache --update-cache add --virtual build-jnb-dependencies \
-    curl make && \
-  mkdir -p min-package && \
-  cd min-package && \
-  curl -L https://archive.org/download/zeromq_4.0.4/zeromq-4.0.4.tar.gz > package.tar.gz && \
-  tar -xzf package.tar.gz && \
-  rm package.tar.gz && \
-  cd $(ls) && \
-  ./configure && make && make install && \
-  cd ../../ && \
-  rm -rf min-package && \
-  strip --strip-unneeded --strip-debug /usr/local/lib/*.a || true && \
-  strip --strip-unneeded --strip-debug /usr/local/lib/*.so* || true 
+# # jupyter dependencies
+# RUN \
+#   apk --no-cache --update-cache add --virtual build-jnb-dependencies \
+#     curl make && \
+#   mkdir -p min-package && \
+#   cd min-package && \
+#   curl -L https://archive.org/download/zeromq_4.0.4/zeromq-4.0.4.tar.gz > package.tar.gz && \
+#   tar -xzf package.tar.gz && \
+#   rm package.tar.gz && \
+#   cd $(ls) && \
+#   ./configure && make && make install && \
+#   cd ../../ && \
+#   rm -rf min-package && \
+#   strip --strip-unneeded --strip-debug /usr/local/lib/*.a || true && \
+#   strip --strip-unneeded --strip-debug /usr/local/lib/*.so* || true 
 # RUN \
 #   apk --no-cache --update-cache add git
 
@@ -59,18 +60,20 @@ SHELL ["/bin/sh", "-lc"]
 RUN \
     conda config --add channels conda-forge && \
     # conda install -y python=3.6 && \
-    conda install -y python=3.8 datajoint --only-deps && \
-    conda clean -ya && \
-    find /opt/conda -user 3000 -exec chmod g+w "{}" \;
-# jupyter install
-RUN \
-  pip install --user jupyter && \
-  chmod -R g+rwx /home/dja/.local/lib && \
-  chmod -R g+wx /home/dja/.local/share && \
-  chmod -R g+w /home/dja/.cache
-user root
-run apk del build-jnb-dependencies
-# && chmod -R g+w /opt/conda
+    conda install -yc conda-forge python=$PY_VER notebook && \
+    conda install -yc conda-forge datajoint --only-deps && \
+    # conda install -yc conda-forge notebook && \
+    # pip install --upgrade --force-reinstall --ignore-installed --no-cache-dir jupyter && \
+    find /opt/conda -user 3000 -exec chmod g+w "{}" \; && \
+    conda clean -ya
+# # jupyter install
+# RUN \
+#   pip install --user jupyter && \
+#   chmod -R g+rwx /home/dja/.local/lib && \
+#   chmod -R g+wx /home/dja/.local/share && \
+#   chmod -R g+w /home/dja/.cache
+# user root
+# run apk del build-jnb-dependencies
 user dja:anaconda
 COPY ./jupyter_notebook_config.py /etc/jupyter/jupyter_notebook_config.py
 # User root
