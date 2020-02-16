@@ -1,2 +1,3 @@
 #!/bin/sh
-eval "$(conda shell.bash hook)"
+eval "$(/opt/conda/bin/conda shell.bash hook)"
+export PATH=/home/dja/.local/bin:$PATH

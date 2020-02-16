@@ -1,14 +1,9 @@
-from continuumio/miniconda3:4.7.12-alpine as t
-ENV PATH "/opt/conda/bin:/usr/local/bin:$PATH:/home/dja/.local/bin"
-COPY shell_intercept.sh /etc/profile.d/
-SHELL ["/bin/sh", "-lc"]
-RUN \
-    # conda update conda && \
-#     # conda config --add channels conda-forge && \
-    conda install -y python=3.6 && \
-#     # conda install -y python=3.7 && \
-#     # conda install -y python=3.8 && \
-    conda clean --yes --all
+from alpine as t
+add http://www.sbeams.org/sample_data/Microarray/Affy_test_data.tar.gz /tmp/affy.tar.gz
+run \
+    cd /tmp && \
+    tar -xzf affy.tar.gz && \
+    chmod -R 400 /tmp/Affy_test_data
 
-FROM scratch
-COPY --from=t / /
+# FROM scratch
+# COPY --from=t / /

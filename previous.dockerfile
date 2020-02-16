@@ -5,10 +5,9 @@ RUN cd / && go build startup.go
 
 from continuumio/miniconda3:4.7.12-alpine as py_build
 
-# ENV PATH "/opt/conda/bin:/usr/local/bin:$PATH:/home/dja/.local/bin"
-
 # https://uoa-eresearch.github.io/eresearch-cookbook/recipe/2014/11/20/conda/
 user root
+# ENV PATH "/opt/conda/bin:/usr/local/bin:$PATH:/home/dja/.local/bin"
 # # datajoint admin (dja) mapped to docker host user
 RUN export uid=3000 gid=3000 && \
     mkdir -p /home/dja && \
@@ -33,6 +32,7 @@ RUN \
   rm -rf min-package && \
   strip --strip-unneeded --strip-debug /usr/local/lib/*.a || true && \
   strip --strip-unneeded --strip-debug /usr/local/lib/*.so* || true 
+# 
 # RUN \
 #   apk --no-cache --update-cache add git
 
@@ -47,6 +47,7 @@ LABEL maintainerName="Raphael Guzman" \
 #     chmod -R o+w /home/dja/.miniconda3/envs && \
 #     printf "\nconda activate dj\n" | tee -a /etc/profile.d/shell_intercept.sh
 USER dja:anaconda
+# ENV PATH "/opt/conda/bin:/usr/local/bin:$PATH:/home/dja/.local/bin"
 COPY shell_intercept.sh /etc/profile.d/
 SHELL ["/bin/sh", "-lc"]
 # ENV CONDA_PKGS_DIRS /home/dja/.miniconda3/pkg
@@ -58,21 +59,19 @@ SHELL ["/bin/sh", "-lc"]
 #     conda install -y -n dj datajoint --only-deps
 RUN \
     conda config --add channels conda-forge && \
-    # conda install -y python=3.6 && \
+    # conda install -y python=3.8 && \
     conda install -y python=3.8 datajoint --only-deps && \
-    conda clean -ya && \
-    find /opt/conda -user 3000 -exec chmod g+w "{}" \;
+    conda clean -ya
+User root
+run chmod -R g+w /opt/conda
+USER dja:anaconda
 # jupyter install
-RUN \
-  pip install --user jupyter && \
-  chmod -R g+rwx /home/dja/.local/lib && \
-  chmod -R g+wx /home/dja/.local/share && \
-  chmod -R g+w /home/dja/.cache
+RUN pip install jupyter
 user root
 run apk del build-jnb-dependencies
-# && chmod -R g+w /opt/conda
 user dja:anaconda
 COPY ./jupyter_notebook_config.py /etc/jupyter/jupyter_notebook_config.py
+# 
 # User root
 # run \
 #     chmod -R o+w /home/dja/.miniconda3/pkg && \
@@ -90,6 +89,7 @@ user root
 RUN \
   chmod +x /entrypoint.sh && \
   chmod 4755 /startup
+user dja:anaconda
 ENTRYPOINT ["/entrypoint.sh"]
 WORKDIR /src
 VOLUME /src
@@ -110,8 +110,7 @@ USER dja:anaconda
 ENV HOME /home/dja
 ENV LANG C.UTF-8
 ENV APK_REQUIREMENTS /apk_requirements.txt
-# ENV PATH "/opt/conda/bin:/usr/local/bin:$PATH:/home/dja/.local/bin"
-ENV PATH "/home/dja/.local/bin:/opt/conda/bin:$PATH"
+ENV PATH "$PATH:/usr/local/bin:/home/dja/.local/bin"
 ENTRYPOINT ["/entrypoint.sh"]
 WORKDIR /src
 VOLUME /src
