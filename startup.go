@@ -41,6 +41,7 @@ func main() {
 	os.Chown(home + "/.cache/pip/wheels", uid_int, gid_int)
 	os.Chown(home + "/.conda", uid_int, gid_int)
 	os.Chown(home + "/.conda/environments.txt", uid_int, gid_int)
+	os.Chown(home + "/.condarc", uid_int, gid_int)
 	// os.Chown(home + "/.miniconda3", uid_int, gid_int)
 	// os.Chown(home + "/.miniconda3/pkg", uid_int, gid_int)
 	// os.Chown(home + "/.miniconda3/envs", uid_int, gid_int)

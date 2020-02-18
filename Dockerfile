@@ -1,11 +1,11 @@
+ARG CONDA_VER=4.7.12
+
 #Temp Image to create exec to allow UID/GID to be updated on boot
 FROM golang:alpine3.11 as go_tmp
 COPY ./startup.go /startup.go
 RUN cd / && go build startup.go
 
-from continuumio/miniconda3:4.7.12-alpine as py_build
-ARG  PY_VER
-ENV  PY_VER=$PY_VER
+from continuumio/miniconda3:${CONDA_VER}-alpine as py_build
 # ENV PATH "/opt/conda/bin:/usr/local/bin:$PATH:/home/dja/.local/bin"
 
 # https://uoa-eresearch.github.io/eresearch-cookbook/recipe/2014/11/20/conda/
@@ -49,6 +49,8 @@ LABEL maintainerName="Raphael Guzman" \
 #     printf "\nconda activate dj\n" | tee -a /etc/profile.d/shell_intercept.sh
 USER dja:anaconda
 COPY shell_intercept.sh /etc/profile.d/
+# run \
+#   /opt/conda/bin/conda create -yn nec
 SHELL ["/bin/sh", "-lc"]
 # ENV CONDA_PKGS_DIRS /home/dja/.miniconda3/pkg
 # ENV CONDA_ENVS_PATH /home/dja/.miniconda3/envs
@@ -57,11 +59,24 @@ SHELL ["/bin/sh", "-lc"]
 #     conda activate dj && \
 #     conda config --add channels conda-forge && \
 #     conda install -y -n dj datajoint --only-deps
+# ENV  PY_VER=$PY_VER
+ARG  PY_VER
+ARG CONDA_VER
 RUN \
+    # conda install -yc anaconda python=$PY_VER notebook && \
+    # conda install -y conda=$CONDA_VER python=$PY_VER && \
     conda config --add channels conda-forge && \
+    # conda install -yc defaults conda=$CONDA_VER python=$PY_VER && \
     # conda install -y python=3.6 && \
-    conda install -yc conda-forge python=$PY_VER notebook && \
-    conda install -yc conda-forge datajoint --only-deps && \
+    # conda install -yc conda-forge conda=4.0 && \
+    # conda install -yc conda-forge python=3.8 && \
+    # conda install -yc conda-forge conda=$CONDA_VER python=$PY_VER && \
+    # conda install -yc defaults conda=$CONDA_VER python=$PY_VER matplotlib && \
+    conda install -yc conda-forge conda=$CONDA_VER python=$PY_VER notebook && \
+    conda install -yc conda-forge conda=$CONDA_VER python=$PY_VER datajoint --only-deps && \
+    conda config --set auto_update_conda False && \
+    # conda install -yc conda-forge -n nec python=$PY_VER notebook && \
+    # conda install -yc conda-forge -n nec datajoint --only-deps && \
     # conda install -yc conda-forge notebook && \
     # pip install --upgrade --force-reinstall --ignore-installed --no-cache-dir jupyter && \
     find /opt/conda -user 3000 -exec chmod g+w "{}" \; && \
